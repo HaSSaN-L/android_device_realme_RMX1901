@@ -21,10 +21,10 @@
 #include <android-base/logging.h>
 #include <fstream>
 #include <cmath>
-
+#include <unistd.h>
 #define FP_PRESS_PATH "/sys/kernel/oppo_display/notify_fppress"
-
 #define HBM_PATH "/sys/kernel/oppo_display/hbm"
+#define DIM_PATH "/sys/kernel/oppo_display/dimlayer_hbm"
 #define DIM_AMOUNT_PATH "/sys/kernel/oppo_display/dim_alpha"
 
 namespace {
@@ -71,33 +71,40 @@ Return<int32_t> FingerprintInscreen::getSize() {
 }
 
 Return<void> FingerprintInscreen::onStartEnroll() {
-    return Void();
+     set(HBM_PATH, 1);
+     set(DIM_PATH, 1);
+return Void();
 }
 
 Return<void> FingerprintInscreen::onFinishEnroll() {
-    return Void();
+    set(HBM_PATH, 0);
+    set(DIM_PATH, 0);
+return Void();
 }
 
 Return<void> FingerprintInscreen::onPress() {
-    set(HBM_PATH, 1);
+//    set(HBM_PATH, 1);
     set(FP_PRESS_PATH, 1);
     return Void();
 }
 
 Return<void> FingerprintInscreen::onRelease() {
-    set(HBM_PATH, 0);
+//    set(HBM_PATH, 0);
     set(FP_PRESS_PATH, 0);
     return Void();
 }
 
 Return<void> FingerprintInscreen::onShowFODView() {
-    return Void();
+    set(HBM_PATH, 1);
+    set(DIM_PATH, 1);
+return Void();
 }
 
 Return<void> FingerprintInscreen::onHideFODView() {
     set(HBM_PATH, 0);
     set(FP_PRESS_PATH, 0);
-    return Void();
+    set(DIM_PATH, 0);
+return Void();
 }
 
 Return<bool> FingerprintInscreen::handleAcquired(int32_t acquiredInfo, int32_t vendorCode) {
@@ -114,11 +121,22 @@ Return<void> FingerprintInscreen::setLongPressEnabled(bool) {
     return Void();
 }
 
+Return<int32_t> FingerprintInscreen::getDimAmount(int32_t brightness) {	
+/*
 Return<int32_t> FingerprintInscreen::getDimAmount(int32_t) {
     int dimAmount = get(DIM_AMOUNT_PATH, 0);
     LOG(INFO) << "dimAmount = " << dimAmount;
 
     return dimAmount;
+*/
+
+float alpha;
+    if (brightness > 62) {
+        alpha = 1.0 - pow(brightness / 255.0 * 430.0 / 600.0, 0.45);
+    } else {
+        alpha = 1.0 - pow(brightness / 200.0, 0.45);
+    }
+    return 255 * alpha;
 }
 
 Return<bool> FingerprintInscreen::shouldBoostBrightness() {
